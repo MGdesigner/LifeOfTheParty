@@ -19,6 +19,9 @@ quiet = True
 
 ser = serial.Serial('/dev/ttyACM1', 9600)
 co2 = serial.Serial('/dev/ttyUSB0', 115200)
+meter = serial.Serial('/dev/ttyACM0', 9600)
+sandwich = serial.Serial('/dev/ttyUSB2', 9600)
+
 graph = facebook.GraphAPI(access_token)
 
 inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
@@ -69,7 +72,7 @@ def readEnvironment():
 	  cAVG+=cohtwo
   tAVG=tAVG/10
   hAVG=hAVG/10
-  cAVG=cAVG/10
+  cAVG=cAVG/100
 
 
 
@@ -143,7 +146,15 @@ def pollSound():
 
 def updateSoundMeter(soundLevel):
   db = 10*math.log10(soundLevel)
-  print 'Sound level: '+ str(db)
+  if db <= 27:
+    meterLevel = 0
+  elif db <= 31:
+    meterLevel = 1
+  else:
+    meterLevel = 2
+  print 'Updating sound meter from db: '+ str(db) +' to level: ['+ str(meterLevel) +']'
+  meter.write(str(meterLevel*60 + 30))
+
   return db
   
 
@@ -158,37 +169,41 @@ def checkSandwich():
   elif last_status['message'].find('Sudo make me a sandwich.') != -1 and last_status['id'] != last_id:
     message = "Okay."
     graph.put_object(last_status['id'], "comments", message=message)
-    ser.write('180')
+    sandwich.write('m')
+    sleep(2)
+    sandwich.write('n')
   last_id = last_status['id']
+  
 
 
-# [temp, hum, co2]
+# [temp, hum, co2, db]
 def classifyParty(observList):
 	toxtr=list()
 	toytr = list()
-	#temp humididy co2 dB
+	#temp humidity co2 dB
 	#10 samples for chill party
+	print observList
 	for i in range(10):
 		tempxtr=list()
-		tempxtr=[75+random.triangular(-2, 3),17+random.triangular(-2,3), 580+random.triangular(-10,20), 42+random.triangular(-2,2)]
+		tempxtr=[72+random.triangular(-2, 3),10+random.triangular(-2,3), 63+random.triangular(-50,50), 27+random.triangular(-2,2)]
 		toxtr.append(tempxtr)
 		toytr.append(1)
 	#10 samples for hopping party
 	for i in range(10):
 		tempxtr=list()
-		tempxtr=[80+random.triangular(-2, 2), 25+random.triangular(-5,5), 600+random.triangular(-50,50), 36+random.triangular(-2,2)]
+		tempxtr=[77+random.triangular(-2, 2), 16+random.triangular(-5,5), 65+random.triangular(-50,50), 30+random.triangular(-2,2)]
 		toxtr.append(tempxtr)
 		toytr.append(2)
 	
 	#10 samples for insane party
 	for i in range(10):
 		tempxtr=list()
-		tempxtr=[85+random.triangular(-3, 5), 35+random.triangular(-7,7), 700+random.triangular(-10,60), 30+random.triangular(-4,4)]
+		tempxtr=[83+random.triangular(-3, 5), 26+random.triangular(-7,7), 95+random.triangular(-50,50), 35+random.triangular(-2,2)]
 		toxtr.append(tempxtr)
 		toytr.append(3)
 	xtr = np.array(toxtr)
 	ytr = np.array(toytr)
-	knn = mlpy.Knn(k=3)
+	knn = mlpy.Knn(k=1)
 	knn.compute(xtr, ytr)
 	xts = np.array(observList)
 	return knn.predict(xts)
@@ -205,6 +220,8 @@ while 1:
 
 print 'Ready'
 sleep(0.5)
+
+sandwich.write('n')
 
 metronome = 0
 while 1:
@@ -228,6 +245,7 @@ while 1:
     print 'T: '+ postMessage
     time.sleep(0.1)
   print 'Finished temp readings.'
+  averageTemp = sum(tempArray) / len(tempArray)
 
   ser.write('i')  # Guest count
 
@@ -236,7 +254,7 @@ while 1:
   numGuests = ser.readline().rstrip()
   strTime = time.asctime(time.localtime(time.time()))
 
-  postMessage = 'People: '+ numGuests +', and my current temperature is: '+ str(sum(tempArray) / len(tempArray)) + '. Bro.'
+  postMessage = 'People: '+ numGuests +', and my current temperature is: '+ str(averageTemp) + '. Bro.'
   print postMessage
 
   postStatus(postMessage)
@@ -250,7 +268,7 @@ while 1:
   updateLikeMeter(likeage)
   soundLevel = updateSoundMeter(soundLevel)
   readEnvironment()
-  partyTier = classifyParty([tAVG, hAVG, cAVG, soundLevel])
+  partyTier = classifyParty([averageTemp, hAVG, cAVG, soundLevel])
   checkSandwich()
   
   print 'Party tier: '+ str(partyTier)
