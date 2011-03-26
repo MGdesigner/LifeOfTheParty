@@ -8,13 +8,13 @@ access_token = '201793946507565%7Cd202ecd7aef8dbce66e1e6e0-100002268818038%7CiHY
 event_id = '130842913653732'  # Hackathon
 graph = facebook.GraphAPI(access_token)
 while 1:
-  posts = graph.get_connections(event_id, 'feed')['data']
-  last_status = posts[0]['message']
-  if last_status.find('Make me a sandwich.') != -1:
+  posts = graph.get_connections('me', 'feed')['data']
+  last_status = posts[0] #['message']
+  if last_status['message'].find('Make me a sandwich.') != -1:
     message = "What? Make it yourself."
-    graph.put_object(last_status['id'], "comments", message)
-  elif last_status.find('Sudo make me a sandwich.') != -1:
+    graph.put_object(last_status['id'], "comments", message=message)
+  elif last_status['message'].find('Sudo make me a sandwich.') != -1:
     message = "Okay."
-    graph.put_object(last_status['id'], "comments", message)
+    graph.put_object(last_status['id'], "comments", message=message)
     ser.write('180')
-  sleep(5)
+  time.sleep(5)
