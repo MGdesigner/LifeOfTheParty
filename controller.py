@@ -8,13 +8,12 @@ from time import sleep
 
 
 access_token = '201793946507565%7Cd202ecd7aef8dbce66e1e6e0-100002268818038%7CiHYYQSxjEu1_O2cltKLULG-7jL8' # LifeOf TheParty
+event_id = '130842913653732'  # Hackathon
 imageLocation = 'capture.jpg'
 quiet = True
 
 ser = serial.Serial('/dev/ttyACM0', 9600)
 graph = facebook.GraphAPI(access_token)
-
-
 
 
 def postStatus(postMessage):
@@ -29,6 +28,41 @@ def postPicture():
     os.system("curl -F 'access_token="+ access_token +"' -F 'source=@"+ imageLocation +"' -F 'message="+ strTime +"' https://graph.facebook.com/me/photos")
   return
 
+def countLikes():
+  numLikes = 0
+  eventFeed = graph.get_connections(event_id, 'feed')
+  for i in eventFeed['data']:
+    if (i.has_key('likes')):
+      print i['likes']['count']
+      numLikes += int(i['likes']['count'])
+  likeage = float(numLikes) / float(len(eventFeed['data']))
+  print "Num likes: "+ str(numLikes) +', num posts: '+ str(float(len(eventFeed['data'])))
+  print "Average: "+ str(likeage)
+  return likeage
+
+def updateLikeMeter(likeage):
+  ser.write('r')
+  ser.readline()
+  ser.write('t')
+  ser.readline()
+  ser.write('y')
+  ser.readline()
+  if (likeage <= 0.33):
+    ser.write('e')
+  elif (likeage <= 0.66):
+    ser.write('e')
+    ser.write('w')
+    ser.readline()
+  else:
+    ser.write('q')
+    ser.write('e')
+    ser.write('w')
+    ser.readline()
+    ser.readline()
+  ser.readline()
+  print 'Updated like meter.'
+  return
+  
 
 
 while 1:
@@ -72,8 +106,11 @@ while 1:
 
   postMessage = 'People: '+ numGuests +', and my current temperature is: '+ str(sum(tempArray) / len(tempArray)) + '. Bro.'
   print postMessage
+
   postStatus(postMessage)
   postPicture()
+  likeage = countLikes()
+  updateLikeMeter(likeage)
   
   
   sleep(2)
