@@ -7,7 +7,7 @@ import os
 from time import sleep
 
 
-access_token = '201793946507565%7C2.GvNfZZBc6rRObaf2oGWadg__.3600.1301122800-100002268818038%7CZieF2kcaynYqHsPhWbNxo1OMigg' # LifeOf TheParty
+access_token = '201793946507565%7Cd202ecd7aef8dbce66e1e6e0-100002268818038%7CiHYYQSxjEu1_O2cltKLULG-7jL8' # LifeOf TheParty
 imageLocation = 'capture.jpg'
 quiet = True
 
@@ -112,9 +112,9 @@ c.close()
 #App Secret
 # ba53a4704f3dd2b046cd090087891424
 #Code
-# 2.QNdUhbDIwYxUy5G_C6lCiQ__.3600.1301104800-698432281|zy_pFQGxrfnde0B08jIWTvZiMLI
+# d202ecd7aef8dbce66e1e6e0-100002268818038%7CXY9AjPPlixPigHgWyvIUY71rRTk
 
-
+#https://graph.facebook.com/oauth/access_token?type=client_cred&client_id=201793946507565&client_secret=ba53a4704f3dd2b046cd090087891424
 
 # https://www.facebook.com/dialog/oauth?client_id=201793946507565&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token
 # https://www.facebook.com/dialog/oauth?client_id=201793946507565&redirect_uri=http://www.facebook.com/&scope=manage_pages&response_type=token
