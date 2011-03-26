@@ -83,13 +83,6 @@ c.close()
 
 
 
-curl -F 'access_token=201793946507565%7C2.Xybx_4SNhmSbdKjYs3tnQg__.3600.1301115600-100002268818038%7CFclNdwBHAL2qXugnR9sfs7GcAPg' \
-     -F 'source=@capture.jpg' \
-     -F 'message=Howdy' \
-     https://graph.facebook.com/me/photos
-
-
-
 
 
 
