@@ -166,23 +166,24 @@ def checkSandwich():
 def classifyParty(observList):
 	toxtr=list()
 	toytr = list()
+	#temp humididy co2 dB
 	#10 samples for chill party
 	for i in range(10):
 		tempxtr=list()
-		tempxtr=[75+random.triangular(-2, 3),17+random.triangular(-2,3), 580+random.triangular(-10,20)]
+		tempxtr=[75+random.triangular(-2, 3),17+random.triangular(-2,3), 580+random.triangular(-10,20), 42+random.triangular(-2,2)]
 		toxtr.append(tempxtr)
 		toytr.append(1)
 	#10 samples for hopping party
 	for i in range(10):
 		tempxtr=list()
-		tempxtr=[80+random.triangular(-2, 2), 25+random.triangular(-5,5), 600+random.triangular(-50,50)]
+		tempxtr=[80+random.triangular(-2, 2), 25+random.triangular(-5,5), 600+random.triangular(-50,50), 36+random.triangular(-2,2)]
 		toxtr.append(tempxtr)
 		toytr.append(2)
 	
 	#10 samples for insane party
 	for i in range(10):
 		tempxtr=list()
-		tempxtr=[85+random.triangular(-3, 5), 35+random.triangular(-7,7), 700+random.triangular(-10,60)]
+		tempxtr=[85+random.triangular(-3, 5), 35+random.triangular(-7,7), 700+random.triangular(-10,60), 30+random.triangular(-4,4)]
 		toxtr.append(tempxtr)
 		toytr.append(3)
 	xtr = np.array(toxtr)
