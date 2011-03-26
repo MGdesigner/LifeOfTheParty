@@ -9,12 +9,13 @@ event_id = '130842913653732'  # Hackathon
 graph = facebook.GraphAPI(access_token)
 while 1:
   posts = graph.get_connections('me', 'feed')['data']
-  last_status = posts[0] #['message']
-  if last_status['message'].find('Make me a sandwich.') != -1:
+  last_status = posts[0] 
+  if last_status['message'].find('Make me a sandwich.') != -1 and last_status['id'] != last_id:
     message = "What? Make it yourself."
     graph.put_object(last_status['id'], "comments", message=message)
-  elif last_status['message'].find('Sudo make me a sandwich.') != -1:
+  elif last_status['message'].find('Sudo make me a sandwich.') != -1 and last_status['id'] != last_id:
     message = "Okay."
     graph.put_object(last_status['id'], "comments", message=message)
     ser.write('180')
+  last_id = last_status['id']
   time.sleep(5)
