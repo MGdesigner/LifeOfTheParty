@@ -1,7 +1,6 @@
 import serial
 import facebook
 import re
-import pycurl
 import urllib
 import time
 import os
@@ -52,16 +51,38 @@ print postMessage
 
 #graph = facebook.GraphAPI('201793946507565|2.nZ2B1nuzV4J_hTGmbZcHHg__.3600.1301112000-698432281|R01RH-jRGI-pu-z_S6k6mJjd8RY') # Jake
 graph = facebook.GraphAPI(access_token) # LifeOf TheParty
-print graph.put_object("me", "feed", message=postMessage)
-#print graph.put_object("
+#print graph.put_object("me", "feed", message=postMessage)
 
+print 'Taking picture'
 imageLocation = 'capture.jpg'
 os.system('python ./camera.py')
-params = { 'access_token': access_token, 'source': imageLocation, 'message': time.asctime(time.localtime(time.time())) }
+
+os.system("curl -F 'access_token="+ access_token +"' -F 'source=@"+ imageLocation +"' -F 'message="+ time.asctime(time.localtime(time.time())) +"' https://graph.facebook.com/me/photos")
+
+
+"""
+fields = [('access_token', access_token), ('message', time.asctime(time.localtime(time.time()))),
+    ('source', (pycurl.FORM_FILE, imageLocation))]
+
 c = pycurl.Curl()
-c.setopt(c.URL, 'https://graph.facebook.com/me/photos?'+ urllib.urlencode(params))
+c.setopt(c.URL, 'https://graph.facebook.com/3780/photos')
+c.setopt(c.HTTPPOST, fields)
 c.perform()
 c.close()
+"""
+
+
+"""
+params = { 'access_token': access_token, 'source': imageLocation, 'message': time.asctime(time.localtime(time.time())) }
+c = pycurl.Curl()
+c.setopt(c.POST, 1)
+c.setopt(c.URL, 'https://graph.facebook.com/me/photos') #?'+ urllib.urlencode(params))
+#c.setopt(c.HTTPPOST, params)
+c.setopt(c.VERBOSE, 1)
+c.perform()
+c.close()
+"""
+
 
 #App ID
 # 201793946507565
@@ -82,12 +103,12 @@ c.close()
 
 
 
-
+"""
 curl -F 'access_token=201793946507565%7C2.Xybx_4SNhmSbdKjYs3tnQg__.3600.1301115600-100002268818038%7CFclNdwBHAL2qXugnR9sfs7GcAPg' \
      -F 'source=@capture.jpg' \
      -F 'message=Howdy' \
      https://graph.facebook.com/me/photos
-
+"""
 
 
 
