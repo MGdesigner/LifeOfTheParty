@@ -2,6 +2,7 @@ import numpy as np
 import mlpy
 import random
 
+# [temp, hum, co2]
 def classify(observList):
 	toxtr=list()
 	toytr = list()

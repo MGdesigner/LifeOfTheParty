@@ -2,8 +2,13 @@ import serial
 import facebook
 import re
 import urllib
-import time
+import time, math
 import os
+import numpy as np
+import mlpy
+import random
+import alsaaudio, time, audioop
+
 from time import sleep
 
 
@@ -12,47 +17,53 @@ event_id = '130842913653732'  # Hackathon
 imageLocation = 'capture.jpg'
 quiet = True
 
-ser = serial.Serial('/dev/ttyACM0', 9600)
-#co2 = serial.Serial('/dev/ttyUSB0',115200)
+ser = serial.Serial('/dev/ttyACM1', 9600)
+co2 = serial.Serial('/dev/ttyUSB0', 115200)
 graph = facebook.GraphAPI(access_token)
+
+inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
+inp.setchannels(2)
+inp.setrate(100)
+inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+inp.setperiodsize(160)
 
 tAVG=0
 hAVG=0
 cAVG=0
 
-def readData():
+def readEnvironment():
   global tAVG
   global hAVG
   global cAVG
   for count in range(10):
-	  ser.write('t')
-	  ser.read(3)
-	  b=ser.read()
-	  a=ser.read()
+	  co2.write('t')
+	  co2.read(3)
+	  b=co2.read()
+	  a=co2.read()
 	  temp=(((ord(a)<<8))*0.018)+32
 	  temp=temp
-	  ser.read()
-	  ser.write('f')
-	  ser.read(5)
-	  time.sleep(.2)
-	  ser.write('r')
-	  ser.read(4)
-	  a=ser.read()
+	  co2.read()
+	  co2.write('f')
+	  co2.read(5)
+	  #time.sleep(.01)
+	  co2.write('r')
+	  co2.read(4)
+	  a=co2.read()
 	  relHumid=(ord(a)<<8)/100
-	  ser.read()
-	  ser.write('d')
-	  ser.read(5)
-	  time.sleep(.2)
-	  ser.write('c')
+	  co2.read()
+	  co2.write('d')
+	  co2.read(5)
+	  #time.sleep(.01)
+	  co2.write('c')
 	  cohtwo=0
-	  ser.read(4)
+	  co2.read(4)
 	  #for i in range(2):
-	  tmp=ser.read()
+	  tmp=co2.read()
 	  cohtwo= ord(tmp)<<8	
-	  ser.read()
-	  ser.write('e')
-	  ser.read(5)
-	  time.sleep(.2)
+	  co2.read()
+	  co2.write('e')
+	  co2.read(5)
+	  #time.sleep(.01)
 	  tAVG+=temp
 	  hAVG+=relHumid
 	  cAVG+=cohtwo
@@ -110,6 +121,80 @@ def updateLikeMeter(likeage):
   return
   
 
+def pollSound():
+  global inp
+  samples = []
+  for i in range(0, 20):
+    # Read data from device
+    l,data = inp.read()
+    if l:
+      # Return the maximum of the absolute value of all samples in a fragment.
+      #print audioop.max(data, 2)
+      sample = float(audioop.max(data, 2))
+      samples.append(sample)
+      print sample
+      time.sleep(.05)
+  average = 0
+  if (len(samples)):
+    average = float(sum(samples)/len(samples))
+  print 'Took sound samples. Level: '+ str(average)
+  return average
+
+
+def updateSoundMeter(soundLevel):
+  db = 10*math.log10(soundLevel)
+  print 'Sound level: '+ str(db)
+  return db
+  
+
+last_id = None
+def checkSandwich():
+  global last_id
+  posts = graph.get_connections('me', 'feed')['data']
+  last_status = posts[0] 
+  if last_status['message'].find('Make me a sandwich.') != -1 and last_status['id'] != last_id:
+    message = "What? Make it yourself."
+    graph.put_object(last_status['id'], "comments", message=message)
+  elif last_status['message'].find('Sudo make me a sandwich.') != -1 and last_status['id'] != last_id:
+    message = "Okay."
+    graph.put_object(last_status['id'], "comments", message=message)
+    ser.write('180')
+  last_id = last_status['id']
+
+
+# [temp, hum, co2]
+def classifyParty(observList):
+	toxtr=list()
+	toytr = list()
+	#10 samples for chill party
+	for i in range(10):
+		tempxtr=list()
+		tempxtr=[75+random.triangular(-2, 3),17+random.triangular(-2,3), 580+random.triangular(-10,20)]
+		toxtr.append(tempxtr)
+		toytr.append(1)
+	#10 samples for hopping party
+	for i in range(10):
+		tempxtr=list()
+		tempxtr=[80+random.triangular(-2, 2), 25+random.triangular(-5,5), 600+random.triangular(-50,50)]
+		toxtr.append(tempxtr)
+		toytr.append(2)
+	
+	#10 samples for insane party
+	for i in range(10):
+		tempxtr=list()
+		tempxtr=[85+random.triangular(-3, 5), 35+random.triangular(-7,7), 700+random.triangular(-10,60)]
+		toxtr.append(tempxtr)
+		toytr.append(3)
+	xtr = np.array(toxtr)
+	ytr = np.array(toytr)
+	knn = mlpy.Knn(k=3)
+	knn.compute(xtr, ytr)
+	xts = np.array(observList)
+	return knn.predict(xts)
+
+
+  
+
 # Wait for 'ready'
 while 1:
   postMessage = ser.readline()
@@ -156,13 +241,18 @@ while 1:
   postStatus(postMessage)
   
   #Every 30 seconds
-  print "Met: "+ str(metronome)
-  if (metronome % 8 == 0):
-    print "Met hit"
+  if (metronome % 6 == 0):
     postPicture()
+
   likeage = countLikes()
+  soundLevel = pollSound()
   updateLikeMeter(likeage)
-  #readData()
+  soundLevel = updateSoundMeter(soundLevel)
+  readEnvironment()
+  partyTier = classifyParty([tAVG, hAVG, cAVG, soundLevel])
+  checkSandwich()
+  
+  print 'Party tier: '+ str(partyTier)
   
   metronome += 1
   sleep(2)

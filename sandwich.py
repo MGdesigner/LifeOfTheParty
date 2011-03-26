@@ -19,3 +19,4 @@ while 1:
     ser.write('180')
   last_id = last_status['id']
   time.sleep(5)
+
