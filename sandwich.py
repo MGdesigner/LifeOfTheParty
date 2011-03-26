@@ -10,6 +10,11 @@ graph = facebook.GraphAPI(access_token)
 while 1:
   posts = graph.get_connections(event_id, 'feed')['data']
   last_status = posts[0]['message']
-  if last_status.find('sudo make me a sandwich') != -1:
+  if last_status.find('Make me a sandwich.') != -1:
+    message = "What? Make it yourself."
+    graph.put_object(last_status['id'], "comments", message)
+  elif last_status.find('Sudo make me a sandwich.') != -1:
+    message = "Okay."
+    graph.put_object(last_status['id'], "comments", message)
     ser.write('180')
   sleep(5)
